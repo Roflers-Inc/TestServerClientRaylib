@@ -7,7 +7,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestServer", "TestServer\Te
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TestClient", "TestClient\TestClient.vcxproj", "{675DD995-09FC-4AB4-8C3E-7E9E42D86094}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LinuxServerTest", "..\LinuxServerTest\LinuxServerTest\LinuxServerTest.vcxproj", "{71A64E1C-1357-4CBC-A9E3-3FC0FE4CD9A8}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LinuxServerTest", "LinuxServerTest\LinuxServerTest.vcxproj", "{71A64E1C-1357-4CBC-A9E3-3FC0FE4CD9A8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
