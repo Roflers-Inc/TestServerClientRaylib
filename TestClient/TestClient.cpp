@@ -226,6 +226,7 @@ int main(int argc, char** argv) {
 			}
 		}
 
+
 		int c = 0;
 		for (std::string i : messageList) {
 			DrawText(i.c_str(), 5, 5 + c * 20, 20, BLACK);
