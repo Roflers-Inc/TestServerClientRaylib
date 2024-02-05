@@ -109,7 +109,7 @@ void loadcfg(int argc, char** argv) {
 }
 
 void sendMyMessage(char* msg) {
-	send(messageSocket, msg, sizeof(msg), 0);
+	send(messageSocket, msg, sizeof(char) * 30, 0);
 }
 
 void messageThread() {
