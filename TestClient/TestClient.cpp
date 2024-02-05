@@ -109,17 +109,18 @@ void loadcfg(int argc, char** argv) {
 }
 
 void sendMyMessage(char* msg) {
-	send(messageSocket, msg, sizeof(msg), 0);
+	send(messageSocket, msg, sizeof(char) * 30, 0);
+	std::cout << msg;
 }
 
 void messageThread() {
 	char message[30];
 	for (std::string& s : messageList) {
-		recv(messageSocket, message, sizeof(message), 0);
-		s = message;
+		recv(messageSocket, message, sizeof(char) * 30, 0);
+		s = std::string(message);
 	}
 	while (GetWindowHandle() && messageSocket > 0) {
-		if (recv(messageSocket, message, sizeof(message), 0) < 0) {
+		if (recv(messageSocket, message, sizeof(char) * 30, 0) < 0) {
 			std::cout << "Error receiving message" << std::endl;
 		}
 		messageList.pop_front();
@@ -155,6 +156,7 @@ int main(int argc, char** argv) {
 	receiverThread.detach();
 	messageReceiverThread.detach();
 	setfps();
+
 	int letterCount = 0;
 
 	Rectangle textBox = { 1000 / 2.0f - 100, 180, 225, 50 };

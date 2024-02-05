@@ -34,7 +34,7 @@ struct Packet {
 
 std::mutex mtx;
 
-std::map<SOCKET, bool> connectionList; 
+std::map<SOCKET, bool> connectionList;
 std::map<SOCKET, std::pair<SOCKET, bool>>messageNotifiable;
 
 SOCKET myMainSocket;
@@ -69,9 +69,13 @@ Packet mainPoint{ 0.0, 0.0 };
 
 std::mutex senderMtx;
 
-void sendToNotifiables(char* msg) {
+void sendToNotifiables() {
+	char temp[30];
+	strcpy(temp, messageHistory.back().c_str());
 	for (auto notif : messageNotifiable) {
-		if(notif.second.second) if (send(notif.second.first, msg, sizeof(msg), 0) < 0) notif.second.second = false;
+		if (notif.second.second) {
+			if (send(notif.second.first, temp, sizeof(temp), 0) < 0) notif.second.second = false;
+		}
 	}
 }
 
@@ -83,12 +87,13 @@ void receiverTask(std::pair<SOCKET, SOCKET> assocSocket) {
 		send(assocSocket.second, temp, sizeof(temp), 0);
 	}
 	while (messageNotifiable.at(assocSocket.first).second) {
-		if (recv(assocSocket.second, msg, sizeof(msg), 0) > 0) {
-			mtx.lock();
-			sendToNotifiables(msg);
-			mtx.unlock();
+		if (recv(assocSocket.second, msg, sizeof(msg), 0) > 0) { // TODO : something wrong with zero-terminating on client; maybe clear msg next time but why?
 			messageHistory.pop_front();
 			messageHistory.push_back(std::string(msg));
+			mtx.lock();
+			sendToNotifiables();
+			mtx.unlock();
+			std::cout << msg << std::endl;
 		}
 	}
 }
@@ -123,15 +128,15 @@ void sendPacketToClient() {
 	if (!connectionList.empty())
 		for (auto& cl : connectionList) {
 			if (cl.second) {
-				mtx.lock();
 				if (send(cl.first, (char*)&mainPoint, sizeof(mainPoint), 0) < 0) {
 					std::cout << "Failed to send packet to " << cl.first << "; errno: " << errno << " Closing connection..." << std::endl;
+					mtx.lock();
 					closesocket(cl.first);
 					cl.second = false;
 					messageNotifiable.at(cl.first).second = false;
 					closesocket(messageNotifiable.at(cl.first).first);
+					mtx.unlock();
 				}
-				mtx.unlock();
 			}
 		}
 }
@@ -153,6 +158,26 @@ void senderTask() {
 	}
 }
 
+void clearClosedCons() {
+	while (!shouldEnd) {
+		std::this_thread::sleep_for(std::chrono::minutes(2));
+		mtx.lock();
+		auto it = connectionList.begin();
+		auto it2 = messageNotifiable.begin();
+		for (; it != connectionList.end();) {
+			if (it->second == false) {
+				connectionList.erase(it);
+				messageNotifiable.erase(it2);
+			}
+			else {
+				it++;
+				it2++;
+			}
+		}
+		mtx.unlock();
+	}
+}
+
 int main(int argc, char** argv) {
 #ifdef _WIN32
 	WSAinit();
@@ -164,7 +189,9 @@ int main(int argc, char** argv) {
 	myMainSocket = createMainSocket(sockAd);
 	std::thread conReceiver(receiveConnections, std::ref(sockAd));
 	std::thread sender(senderTask);
+	std::thread cleaner(clearClosedCons);
 
+	cleaner.join();
 	conReceiver.join();
 	sender.join();
 	closesocket(myMainSocket);
